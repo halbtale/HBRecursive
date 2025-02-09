@@ -18,7 +18,7 @@ function scanFolder(dir, fileList = []) {
 		if (fs.statSync(filePath).isDirectory()) {
 			scanFolder(filePath, fileList);
 		} else if (
-			filePath.endsWith('.VOB') &&
+			filePath.endsWith('.mp4') &&
 			path.basename(filePath) !== 'VIDEO_TS.VOB'
 		) {
 			fileList.push(filePath);
@@ -73,6 +73,36 @@ async function processFile(filePath, inputDir, outputDir) {
 	);
 }
 
+async function copyFile(filePath, inputDir, outputDir) {
+	return /** @type {Promise<void>} */ (
+		new Promise((resolve, reject) => {
+			console.log(`Found VOB file: ${filePath}`);
+			const relativePath = path.relative(inputDir, filePath);
+			const outputPath = path
+				.join(outputDir, relativePath)
+				.replace(/\.mp4$/i, '.mp4');
+			const outputDirPath = path.dirname(outputPath);
+
+			// Crea la directory di output se non esiste
+			fs.mkdirSync(outputDirPath, { recursive: true });
+
+			try {
+				// Copia il file
+
+				fs.copyFile(filePath, outputPath, (err) => {
+					if (err) {
+						console.error(`Error copying file ${filePath}:`, err);
+						reject(err);
+					}
+					resolve();
+				});
+			} catch (error) {
+				console.error(`Error executing command for ${filePath}:`, error);
+			}
+		})
+	);
+}
+
 async function processFiles(files, inputDir, outputDir) {
 	const errors = [];
 	for (let i = 0; i < files.length; i++) {
@@ -83,7 +113,7 @@ async function processFiles(files, inputDir, outputDir) {
 		console.log('🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥');
 		const filePath = files[i];
 		try {
-			await processFile(filePath, inputDir, outputDir);
+			await copyFile(filePath, inputDir, outputDir);
 		} catch (e) {
 			errors.push(filePath);
 		}
